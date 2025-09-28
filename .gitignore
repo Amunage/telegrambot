@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# venv
+.venv/
+venv/
+
+# documents
+.documents/
+documents/
+
+# secrets / local config
+.env
+*.env
+*.key
+*.pem
+
+# DB / logs
+*.db
+*.db-*
+*.sqlite*
+logs/
+*.log
+*.bat
+*.lnk
+
+# OS/IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+
