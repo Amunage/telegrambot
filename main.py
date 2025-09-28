@@ -3,6 +3,8 @@ import os
 import random
 import time
 from typing import Set
+from pathlib import Path
+BASE_DIR = Path(__file__).resolve().parent
 print("Loading libraries...")
 from aiogram import Bot, Dispatcher, Router, types
 from aiogram.client.default import DefaultBotProperties
@@ -20,7 +22,7 @@ from setenv import ensure_env_file
 print("Loading environment variables...")
 ensure_env_file()
 init_db()
-load_dotenv()
+load_dotenv(BASE_DIR / ".env")
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 
 if not TELEGRAM_BOT_TOKEN:
@@ -42,6 +44,8 @@ def _parse_idle_reply_probability(env_name: str = "BOT_IDLE_REPLY_PROB") -> floa
 IDLE_REPLY_PROBABILITY = _parse_idle_reply_probability()
 
 ALLOWED_CHAT_IDS: Set[int] = parse_ids_from_env("TELEGRAM_GROUP_IDS")
+print("ALLOWED (raw):", os.getenv("TELEGRAM_GROUP_IDS"))
+print("ALLOWED (parsed):", ALLOWED_CHAT_IDS)
 
 # --- 관리자 권한 -----------------------------------------------------------
 print("Setting up admin users...")
@@ -62,6 +66,7 @@ def _parse_admin_ids(raw: str | None) -> set[int]:
 
 
 ADMIN_IDS = _parse_admin_ids(os.getenv("TELEGRAM_ADMIN_IDS"))
+
 
 
 def is_admin(user_id: int | None) -> bool:

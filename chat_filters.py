@@ -38,6 +38,8 @@ class ChatAllowed(Filter):
         self.notify = notify
         self.notice = notice
 
+        self.blocked = False
+
     async def __call__(self, event: types.TelegramObject, bot: Bot) -> bool:
         chat = None
         if isinstance(event, types.Message):
@@ -63,10 +65,12 @@ class ChatAllowed(Filter):
 
         # 차단 안내 (무한루프 방지: 봇 메시지에는 알림 X)
         if self.notify:
+            print(f"[info] {chat.id} / {self.allowed_ids})")
             try:
                 if isinstance(event, types.Message):
-                    if not (event.from_user and event.from_user.is_bot):
+                    if not self.blocked:
                         await bot.send_message(chat.id, self.notice)
+                        self.blocked = True
                 elif isinstance(event, types.CallbackQuery):
                     await event.answer("이 채팅방에서는 사용할 수 없어요.", show_alert=True)
                 else:
