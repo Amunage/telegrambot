@@ -1,14 +1,15 @@
+print("Initializing bot...")
 import os
 import random
 import time
 from typing import Set
-
+print("Loading libraries...")
 from aiogram import Bot, Dispatcher, Router, types
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.filters import Command
 from dotenv import load_dotenv
-
+print("Loading modules...")
 import llm
 import settings
 from chat_filters import ChatAllowed, parse_ids_from_env
@@ -16,8 +17,9 @@ from store import init_db, save_message
 from setenv import ensure_env_file
 
 # --- 기본 설정 -------------------------------------------------------------
-
+print("Loading environment variables...")
 ensure_env_file()
+init_db()
 load_dotenv()
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 
@@ -42,7 +44,7 @@ IDLE_REPLY_PROBABILITY = _parse_idle_reply_probability()
 ALLOWED_CHAT_IDS: Set[int] = parse_ids_from_env("TELEGRAM_GROUP_IDS")
 
 # --- 관리자 권한 -----------------------------------------------------------
-
+print("Setting up admin users...")
 def _parse_admin_ids(raw: str | None) -> set[int]:
     if not raw:
         return set()
@@ -71,7 +73,7 @@ def is_admin(user_id: int | None) -> bool:
 
 
 # --- 봇 인스턴스 -----------------------------------------------------------
-
+print("Starting bot")
 bot = Bot(
     token=TELEGRAM_BOT_TOKEN,
     default=DefaultBotProperties(parse_mode=ParseMode.HTML)
@@ -89,8 +91,6 @@ router.chat_member.filter(chat_filter)
 router.my_chat_member.filter(chat_filter)
 dp.include_router(router)
 
-# --- DB 초기화 -------------------------------------------------------------
-init_db()
 
 # --- 봇 명령어 -------------------------------------------------------------
 
@@ -128,7 +128,7 @@ async def umabot_cmd(msg: types.Message):
 async def on_message(msg: types.Message):
     print(f"{msg.from_user.username}: {msg.text}")
 
-    if msg.text.startswith("/"):
+    if msg.text and msg.text.startswith("/"):
         return
 
     me = await bot.get_me()

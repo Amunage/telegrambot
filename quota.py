@@ -18,6 +18,11 @@ def _env_int(name: str, default: int) -> int:
 
 USAGE_DB_PATH = os.getenv("USAGE_DB_PATH", "usage.db")
 
+# DB 파일의 디렉토리가 존재하지 않으면 생성
+_db_dir = os.path.dirname(USAGE_DB_PATH)
+if _db_dir and not os.path.exists(_db_dir):
+    os.makedirs(_db_dir, exist_ok=True)
+
 # Defaults pulled once at import; they can be overridden via DB entries.
 _ENV_LIMITS: Dict[str, int] = {
     "MAX_CALLS_PER_DAY": _env_int("MAX_CALLS_PER_DAY", 100),
