@@ -22,12 +22,23 @@ ts="$(date +%Y%m%d-%H%M%S)"
 WORK="/tmp/tgdeploy-$ts"
 mkdir -p "$WORK" "$RELEASES_DIR"
 
+# 필수 입력 확인 (REPO_ZIP_URL 없으면 바로 종료)
+if [[ -z "${REPO_ZIP_URL:-}" ]]; then
+  echo "ERROR: REPO_ZIP_URL is not set" >&2
+  exit 1
+fi
+
 ZIP="$WORK/source.zip"
+
+# 토큰은 선택: 정의 안 되어 있으면 빈 값으로
 HDR=()
-[[ -n "$GITHUB_TOKEN" ]] && HDR=("-H" "Authorization: token $GITHUB_TOKEN")
+if [[ -n "${GITHUB_TOKEN:-}" ]]; then
+  HDR=(-H "Authorization: token ${GITHUB_TOKEN}")
+fi
 
 echo "[1/5] 다운로드..."
-curl -L "${HDR[@]}" -o "$ZIP" "$REPO_ZIP_URL"
+# -f: HTTP 오류시 실패, -s: 조용히, -S: 실패 시 메시지, -L: 리다이렉트 추적
+curl -fSsL "${HDR[@]}" -o "$ZIP" "$REPO_ZIP_URL"
 
 echo "[2/5] 압축 해제..."
 EXTRACT="$WORK/extract"
@@ -71,8 +82,12 @@ if systemctl is-active --quiet telegram-bot; then
 fi
 
 # 기존 내용을 새 릴리즈로 덮어쓰기 (권한 보존)
-rsync -a --delete --exclude ".venv" --exclude ".git" "$NEW_RELEASE"/ "$CURRENT_DIR"/
-
+rsync -a --delete-after \
+  --exclude ".venv" \
+  --exclude ".git" \
+  --exclude "releases/**" \
+  "$NEW_RELEASE"/ "$CURRENT_DIR"/
+  
 # 의존성 갱신(선택)
 if [[ -f "$CURRENT_DIR/requirements.txt" && -x "$CURRENT_DIR/.venv/bin/pip" ]]; then
   "$CURRENT_DIR/.venv/bin/pip" install -r "$CURRENT_DIR/requirements.txt" --no-input || true
