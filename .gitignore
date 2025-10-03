@@ -10,6 +10,10 @@ venv/
 # documents
 .documents/
 documents/
+.deploy/
+deploy/
+.scripts/
+scripts/
 
 # secrets / local config
 .env

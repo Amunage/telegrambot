@@ -12,13 +12,15 @@ from aiogram.enums import ParseMode
 from aiogram.filters import Command
 from dotenv import load_dotenv
 print("Loading modules...")
+import commands
 import llm
-import settings
+import post_idle
 from chat_filters import ChatAllowed, parse_ids_from_env
 from store import init_db, save_message
 from setenv import ensure_env_file
 
-# --- 기본 설정 -------------------------------------------------------------
+# 기본 설정
+
 print("Loading environment variables...")
 ensure_env_file()
 init_db()
@@ -44,10 +46,11 @@ def _parse_idle_reply_probability(env_name: str = "BOT_IDLE_REPLY_PROB") -> floa
 IDLE_REPLY_PROBABILITY = _parse_idle_reply_probability()
 
 ALLOWED_CHAT_IDS: Set[int] = parse_ids_from_env("TELEGRAM_GROUP_IDS")
-print("ALLOWED (raw):", os.getenv("TELEGRAM_GROUP_IDS"))
-print("ALLOWED (parsed):", ALLOWED_CHAT_IDS)
+# print("ALLOWED (raw):", os.getenv("TELEGRAM_GROUP_IDS"))
+# print("ALLOWED (parsed):", ALLOWED_CHAT_IDS)
 
-# --- 관리자 권한 -----------------------------------------------------------
+# 관리자 권한
+
 print("Setting up admin users...")
 def _parse_admin_ids(raw: str | None) -> set[int]:
     if not raw:
@@ -77,7 +80,8 @@ def is_admin(user_id: int | None) -> bool:
 
 
 
-# --- 봇 인스턴스 -----------------------------------------------------------
+# 봇 인스턴스
+
 print("Starting bot")
 bot = Bot(
     token=TELEGRAM_BOT_TOKEN,
@@ -86,7 +90,7 @@ bot = Bot(
 dp = Dispatcher()
 
 
-# --- 채팅방 필터링 ---------------------------------------------------------
+# 채팅방 필터링
 
 router = Router()
 chat_filter = ChatAllowed(ALLOWED_CHAT_IDS, notify=True, notice="트레이너가 모르는 사람이랑 말하지 말래요...")
@@ -97,37 +101,23 @@ router.my_chat_member.filter(chat_filter)
 dp.include_router(router)
 
 
-# --- 봇 명령어 -------------------------------------------------------------
+# 봇 명령어
 
-@router.message(Command("start"))
-async def start_cmd(msg: types.Message):
-    if not is_admin(msg.from_user.id if msg.from_user else None):
-        await msg.answer("이 명령은 관리자만 사용할 수 있어요.")
-        return
-    await msg.answer(
-        "어~… 평범~한 우마무스메예요! 어디에나 있을 법한 그런 느낌의~"
+command_list = ["umastart", "umabot", "umahumor"]
+
+@router.message(Command(commands=command_list))
+async def handle_commands(msg: types.Message):
+    """Delegate command handling to the commands module."""
+    await commands.handle_command(
+        msg=msg,
+        bot=bot,
+        is_admin=is_admin,
+        allowed_chat_ids=ALLOWED_CHAT_IDS,
     )
 
-@router.message(Command("umabot"))
-async def umabot_cmd(msg: types.Message):
-    if not is_admin(msg.from_user.id if msg.from_user else None):
-        await msg.answer("이 명령은 관리자만 사용할 수 있어요.")
-        return
-    print(f'{msg.from_user.id}: {msg.text}')
-
-    parts = (msg.text or "").split()
-    chat_id = msg.chat.id
-    user_id = msg.from_user.id
-    user_name = msg.from_user.username
-
-    text = settings.bot_settings(parts, chat_id, user_id, user_name)
-
-    if text:
-        await msg.answer(text)
-        return
 
 
-# --- 일반 메시지 처리 ------------------------------------------------------
+# 일반 메시지 처리
 
 @router.message()
 async def on_message(msg: types.Message):
@@ -153,7 +143,8 @@ async def on_message(msg: types.Message):
             int(time.time())
         )
 
-    # --- 응답 트리거 체크 -------------------------------------------------
+    # 응답 트리거 체크
+
     triggered = False
     if msg.text and f"@{me.username}" in msg.text:
         triggered = True
@@ -170,18 +161,18 @@ async def on_message(msg: types.Message):
         return
 
 
-    # --- LLM 호출 및 응답 -------------------------------------------------
+    # LLM 호출 및 응답
+
     response_text = llm.generate_genai(
         chat_id=msg.chat.id,
         user_name=msg.from_user.username,
         user_msg=question
     )
-    
-    # response_text = "테스트출력"
-
+    if not response_text:
+        response_text = "미라클이 잠시 생각에 잠겼어요... 조금 있다가 다시 시도해 주세요."
     await msg.answer(response_text)
 
-    # --- 봇 메시지 저장 --------------------------------------------------
+    # 봇 메시지 저장
 
     save_message(
         msg.chat.id,
@@ -193,7 +184,12 @@ async def on_message(msg: types.Message):
     )
 
 async def run_bot():
-    await dp.start_polling(bot)
+    idle_poster = post_idle.start_idle_task(bot, ALLOWED_CHAT_IDS)
+    try:
+        await dp.start_polling(bot)
+    finally:
+        if idle_poster:
+            await idle_poster.stop()
 
 
 if __name__ == "__main__":

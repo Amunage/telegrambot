@@ -1,11 +1,28 @@
-from store import (
-    set_guidelines, get_guidelines, clear_guidelines, get_memory_config, set_memory_config,
-    cleanup_keep_recent_per_chat, cleanup_old_messages, reset_db
-)
+import time
+from typing import Callable, Set
 
+from aiogram import Bot, types
+
+import post_idle
 from context_builder import build_context_for_llm
-from aiogram.enums import ParseMode
-from quota import get_limits, set_limit, reset_limits, get_usage_summary_today, reset_usage
+from quota import (
+    get_limits,
+    get_usage_summary_today,
+    reset_limits,
+    reset_usage,
+    set_limit,
+)
+from store import (
+    cleanup_keep_recent_per_chat,
+    cleanup_old_messages,
+    clear_guidelines,
+    get_guidelines,
+    get_memory_config,
+    reset_db,
+    save_message,
+    set_guidelines,
+    set_memory_config,
+)
 
 
 HELP_TEXT = (
@@ -82,12 +99,10 @@ def bot_settings(parts, chat_id, user_id, user_name):
             txt = get_guidelines(chat_id)
             if not txt.strip():
                 return "현재 커스텀 지침이 없습니다."
-            # 길면 앞부분만 보여주고, 컨텍스트에는 풀로 들어갑니다.
             preview = (txt[:900] + "…") if len(txt) > 900 else txt
             return f"커스텀 지침\n<pre>{preview}</pre>"
 
         if sub == "set":
-            # /umabot guide set <여기부터 끝까지> 를 하나의 지침으로 저장
             if len(parts) < 4:
                 return "[사용법] /umabot guide set [지침내용]"
             text = " ".join(parts[3:]).strip()
@@ -99,7 +114,6 @@ def bot_settings(parts, chat_id, user_id, user_name):
             return "커스텀 지침을 삭제했습니다."
 
         return "[사용법] /umabot guide [show|set|clear]"
-
 
     if command == "quota":
         if len(parts) < 3:
@@ -113,9 +127,11 @@ def bot_settings(parts, chat_id, user_id, user_name):
             return f"오늘 사용량(총)\n- 호출: {tc}\n- 입력 문자: {ti}\n- 출력 토큰(추정): {to}"
 
         if sub == "set":
-            # /umabot quota set MAX_CALLS_PER_DAY 500
             if len(parts) < 5:
-                keys = "MAX_CALLS_PER_DAY | MAX_INPUT_CHARS_PER_DAY | MAX_OUTPUT_TOKENS_PER_DAY | MAX_CALLS_PER_CHAT_PER_DAY"
+                keys = (
+                    "MAX_CALLS_PER_DAY | MAX_INPUT_CHARS_PER_DAY | "
+                    "MAX_OUTPUT_TOKENS_PER_DAY | MAX_CALLS_PER_CHAT_PER_DAY"
+                )
                 return f"[사용법] /umabot quota set <KEY> <값>\n가능키: {keys}"
             key = parts[3].upper()
             try:
@@ -129,19 +145,16 @@ def bot_settings(parts, chat_id, user_id, user_name):
             return f"{key} = {value} 로 설정했습니다. (프로세스 재시작 없이 즉시 반영)"
 
         if sub == "reset":
-            # /umabot quota reset limits|today|all
             scope = parts[3].lower() if len(parts) >= 4 else "limits"
             if scope == "limits":
                 reset_limits()
                 return "한도 오버라이드를 초기화했습니다. (환경변수 기본값으로 복귀)"
-            if scope in ("today","all"):
+            if scope in ("today", "all"):
                 reset_usage(scope)
                 return f"사용량을 초기화했습니다. (scope={scope})"
             return "[사용법] /umabot quota reset [limits|today|all]"
 
         return "[사용법] /umabot quota [show|set|reset]"
-
-
 
     if command == "data":
         if len(parts) < 3:
@@ -167,7 +180,60 @@ def bot_settings(parts, chat_id, user_id, user_name):
                 return "컨텍스트가 비어있어요. 최근 대화가 있는지 확인해 주세요."
 
             return f"<pre>{final_ctx}</pre>"
-        
+
         return "[사용법] /umabot data [context|reset]"
 
     return "모르겠어요. /umabot help 로 도움말을 확인하세요."
+
+
+async def handle_command(
+    msg: types.Message,
+    bot: Bot,
+    is_admin: Callable[[int | None], bool],
+    allowed_chat_ids: Set[int] | None = None,
+) -> None:
+    if not is_admin(msg.from_user.id if msg.from_user else None):
+        await msg.answer("이 명령은 관리자만 사용할 수 있어요.")
+        return
+
+    command = (msg.text or "").split(maxsplit=1)[0].lower().lstrip("/")
+
+    if command == "umastart":
+        if allowed_chat_ids is not None:
+            print(f"[info] {msg.chat.id} / {allowed_chat_ids}")
+        else:
+            print(f"[info] {msg.chat.id}")
+        await msg.answer("어~… 평범~한 우마무스메예요! 어디에나 있을 법한 그런 느낌의~")
+        return
+
+    if command == "umabot":
+        print(f'{msg.from_user.id}: {msg.text}')
+        parts = (msg.text or "").split()
+        chat_id = msg.chat.id
+        user_id = msg.from_user.id if msg.from_user else None
+        user_name = msg.from_user.username if msg.from_user else None
+
+        text = bot_settings(parts, chat_id, user_id, user_name)
+        if text:
+            await msg.answer(text)
+        return
+
+    if command == "umahumor":
+        humor_text = await post_idle.fetch_humor_message(bot)
+        if not humor_text:
+            await msg.answer("지금은 유머글을 가져오지 못했어요. 잠시 후 다시 시도해 주세요!")
+            return
+
+        await msg.answer(humor_text)
+
+        save_message(
+            msg.chat.id,
+            None,
+            'Miracle',
+            'bot',
+            humor_text,
+            int(time.time())
+        )
+        return
+
+    await msg.answer("사용할 수 있는 명령이 아니에요.")

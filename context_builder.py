@@ -1,7 +1,18 @@
+from datetime import datetime, timedelta, timezone
 from typing import List
-import utils
-import store
 
+import store
+import utils
+
+
+_KST = timezone(timedelta(hours=9))
+_KOREAN_WEEKDAYS = ("월요일", "화요일", "수요일", "목요일", "금요일", "토요일", "일요일")
+
+
+def _make_korea_time_block()->str:
+    now = datetime.now(_KST)
+    weekday = _KOREAN_WEEKDAYS[now.weekday()]
+    return f"{now.hour:02d}시{now.minute:02d}분 {weekday}"
 
 def _clip(s:str, cap:int)->str:
     return s if len(s) <= cap else s[:cap-1] + "…"
@@ -38,7 +49,10 @@ def build_context_for_llm(chat_id:int, user_name:str, user_msg:str, budget_chars
     input_block = f"{user_name}: {user_msg}"
 
     # --- 조립 (블록별 상한) ---
+    time_block = _make_korea_time_block()
+
     blocks = [
+        ("[TIME]", time_block, 32),
         ("[GUIDELINES]", guidelines_block, 2000),
         ("[CHAT]",   chat_block,   int(budget_chars*0.6)),
         ("[INPUT]",   input_block,   800),

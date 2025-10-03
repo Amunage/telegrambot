@@ -7,12 +7,12 @@ from context_builder import build_context_for_llm
 from persona import umamusume
 from quota import _check_quota_or_msg, add_usage, _estimate_output_tokens_from_config
 
-
+# LLM 설정
 MODEL_NAME = "gemini-2.5-flash"
 
 _config_kwargs = dict(
-    temperature=0.8,
-    max_output_tokens=150,
+    temperature=0.9,
+    max_output_tokens=200,
     top_p=0.95,
     top_k=40,
     stop_sequences=["트레이너 씨:", "User:"],
@@ -22,7 +22,7 @@ _config_kwargs = dict(
 
 CONFIG = genai.types.GenerateContentConfig(**_config_kwargs)
 
-
+# LLM 클라이언트 (genai.Client) 캐싱
 @lru_cache(maxsize=1)
 def _get_client() -> genai.Client:
     api_key = os.getenv("GEMINI_API_KEY")
@@ -38,17 +38,19 @@ def generate_genai(chat_id: int, user_name: str, user_msg: str) -> str:
         chat_id=chat_id,
         user_name=user_name,
         user_msg=user_msg,
-        budget_chars=3000,
+        budget_chars=2000,
     )
 
-    # === [가드] 호출 전 한도 검사 ==========================================
+    # [가드] 호출 전 한도 검사
+
     limit_msg = _check_quota_or_msg(chat_id, input_chars=len(prompt), config=CONFIG)
     if limit_msg:
         return limit_msg
-    # ========================================================================
+    
+    # [호출] LLM API 호출
 
     client = _get_client()
-
+    
     try:
         response = client.models.generate_content(
             model=MODEL_NAME,
@@ -65,10 +67,10 @@ def generate_genai(chat_id: int, user_name: str, user_msg: str) -> str:
         print(f"[llm] Unexpected error: {exc}")
         return "엣, 죄송해요... 방금 뭐라고 하셨죠?"
 
-    # === [기록] 호출 후 사용량 누적 =========================================
+    # [기록] 호출 후 사용량 누적
     add_usage(chat_id, input_chars=len(prompt), output_tokens=_estimate_output_tokens_from_config(CONFIG))
-    # ========================================================================
 
+    # [파싱] 응답 파싱 및 반환
     if hasattr(response, "text"):
         print(f"LLM response: {response.text}")
 
