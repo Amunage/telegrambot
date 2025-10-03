@@ -5,6 +5,7 @@ import random
 import re
 import time
 from contextlib import suppress
+from datetime import datetime, timedelta, timezone
 from typing import Dict, Iterable, Optional, Tuple
 from urllib.parse import urljoin
 
@@ -20,6 +21,9 @@ HUMOR_IDLE_MINUTES = 180  # 3 hours
 HUMOR_IDLE_CHECK_SECONDS = 600  # 최소 10분
 HUMOR_IDLE_HTTP_TIMEOUT = 10.0
 HUMOR_IDLE_MESSAGE_TEMPLATE = "{title}\n{link}"
+HUMOR_IDLE_QUIET_START_HOUR = 0  # 0시
+HUMOR_IDLE_QUIET_END_HOUR = 8    # 8시 미만까지 조용히
+HUMOR_IDLE_TIMEZONE = timezone(timedelta(hours=9))  # 한국 표준시
 
 
 class IdleHumorPoster:
@@ -33,6 +37,11 @@ class IdleHumorPoster:
         self._check_interval = HUMOR_IDLE_CHECK_SECONDS
         self._request_timeout = HUMOR_IDLE_HTTP_TIMEOUT
         self._message_template = HUMOR_IDLE_MESSAGE_TEMPLATE
+        self._quiet_hours: Optional[Tuple[int, int]] = (
+            HUMOR_IDLE_QUIET_START_HOUR,
+            HUMOR_IDLE_QUIET_END_HOUR,
+        )
+        self._timezone = HUMOR_IDLE_TIMEZONE
 
         self._last_post_marker: Dict[int, int] = {}
         self._recent_links: list[str] = []
@@ -79,6 +88,8 @@ class IdleHumorPoster:
 
     async def _tick(self) -> None:
         now = int(time.time())
+        if self._is_quiet_hours(now):
+            return
         for chat_id in self._chat_ids:
             info = store.get_last_message(chat_id)
             if not info:
@@ -118,6 +129,25 @@ class IdleHumorPoster:
 
             self._last_post_marker[chat_id] = sent_ts
             await asyncio.sleep(0.1)
+
+    def _is_quiet_hours(self, epoch: Optional[int] = None) -> bool:
+        if not self._quiet_hours:
+            return False
+
+        start, end = self._quiet_hours
+        start = max(0, min(23, start))
+        end = max(0, min(23, end))
+
+        if start == end:
+            return False
+
+        tz = self._timezone or HUMOR_IDLE_TIMEZONE
+        target_epoch = epoch or time.time()
+        hour = datetime.fromtimestamp(target_epoch, tz).hour
+
+        if start < end:
+            return start <= hour < end
+        return hour >= start or hour < end
 
     async def _fetch_article(self) -> Optional[Tuple[str, str]]:
         timeout = aiohttp.ClientTimeout(total=self._request_timeout)
