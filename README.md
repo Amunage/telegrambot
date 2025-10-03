@@ -59,16 +59,16 @@ cd telegrambot
 
 `project/.env` 예시:
 
-`TELEGRAM_BOT_TOKEN` | BotFather에서 받은 토큰 (필수)
-`TELEGRAM_GROUP_IDS` | 봇이 응답할 허용 채팅 ID (쉼표로 구분)
-`TELEGRAM_ADMIN_IDS` | 관리 명령을 사용할 수 있는 사용자 ID (옵션, 비우면 모두 허용)
-`GEMINI_API_KEY` | 제미나이 API KEY
-`CONTEXT_MAX_MINUTES` | 컨텍스트 로그에 포함 할 최대 과거 시간
-`CONTEXT_MAX_MESSAGES` | 컨텍스트 로그에 포함 할 최대 과거 메세지
-`MAX_CALLS_PER_DAY` | 하루 최대 호출 가능 수
-`MAX_INPUT_CHARS_PER_DAY` | 하루 최대 입력 가능한 글자 수
-`MAX_OUTPUT_TOKENS_PER_DAY` | 하루 최대 출력 가능한 토큰 (추정값)
-`BOT_IDLE_REPLY_PROB` | 멘션 없이도 랜덤 응답을 허용할 확률 (0~1 사이)
+- `TELEGRAM_BOT_TOKEN` | BotFather에서 받은 토큰 (필수)
+- `TELEGRAM_GROUP_IDS` | 봇이 응답할 허용 채팅 ID (쉼표로 구분)
+- `TELEGRAM_ADMIN_IDS` | 관리 명령을 사용할 수 있는 사용자 ID (옵션, 비우면 모두 허용)
+- `GEMINI_API_KEY` | 제미나이 API KEY
+- `CONTEXT_MAX_MINUTES` | 컨텍스트 로그에 포함 할 최대 과거 시간
+- `CONTEXT_MAX_MESSAGES` | 컨텍스트 로그에 포함 할 최대 과거 메세지
+- `MAX_CALLS_PER_DAY` | 하루 최대 호출 가능 수
+- `MAX_INPUT_CHARS_PER_DAY` | 하루 최대 입력 가능한 글자 수
+- `MAX_OUTPUT_TOKENS_PER_DAY` | 하루 최대 출력 가능한 토큰 (추정값)
+- `BOT_IDLE_REPLY_PROB` | 멘션 없이도 랜덤 응답을 허용할 확률 (0~1 사이)
 
 ### 4. 로컬 실행
 
