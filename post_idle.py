@@ -17,7 +17,7 @@ import store
 
 DOGDRIP_POPULAR_URL = "https://www.dogdrip.net/?mid=dogdrip&sort_index=popular"
 HUMOR_IDLE_MINUTES = 180  # 3 hours
-HUMOR_IDLE_CHECK_SECONDS = 300  # 최소 30초
+HUMOR_IDLE_CHECK_SECONDS = 600  # 최소 10분
 HUMOR_IDLE_HTTP_TIMEOUT = 10.0
 HUMOR_IDLE_MESSAGE_TEMPLATE = "{title}\n{link}"
 
