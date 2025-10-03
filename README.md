@@ -59,16 +59,18 @@ cd telegrambot
 
 `project/.env` 예시:
 
-- `TELEGRAM_BOT_TOKEN` | BotFather에서 받은 토큰 (필수)
-- `TELEGRAM_GROUP_IDS` | 봇이 응답할 허용 채팅 ID (쉼표로 구분)
-- `TELEGRAM_ADMIN_IDS` | 관리 명령을 사용할 수 있는 사용자 ID (옵션, 비우면 모두 허용)
-- `GEMINI_API_KEY` | 제미나이 API KEY
-- `CONTEXT_MAX_MINUTES` | 컨텍스트 로그에 포함 할 최대 과거 시간
-- `CONTEXT_MAX_MESSAGES` | 컨텍스트 로그에 포함 할 최대 과거 메세지
-- `MAX_CALLS_PER_DAY` | 하루 최대 호출 가능 수
-- `MAX_INPUT_CHARS_PER_DAY` | 하루 최대 입력 가능한 글자 수
-- `MAX_OUTPUT_TOKENS_PER_DAY` | 하루 최대 출력 가능한 토큰 (추정값)
-- `BOT_IDLE_REPLY_PROB` | 멘션 없이도 랜덤 응답을 허용할 확률 (0~1 사이)
+| 변수 | 설명 |
+| --- | --- |
+| `TELEGRAM_BOT_TOKEN` | BotFather에서 받은 토큰 (필수) |
+| `TELEGRAM_GROUP_IDS` | 봇이 응답할 허용 채팅 ID (쉼표로 구분) |
+| `TELEGRAM_ADMIN_IDS` | 관리 명령을 사용할 수 있는 사용자 ID (옵션, 비우면 모두 허용) |
+| `GEMINI_API_KEY` | 제미나이 API KEY |
+| `CONTEXT_MAX_MINUTES` | 컨텍스트 로그에 포함 할 최대 과거 시간 |
+| `CONTEXT_MAX_MESSAGES` | 컨텍스트 로그에 포함 할 최대 과거 메세지 |
+| `MAX_CALLS_PER_DAY` | 하루 최대 호출 가능 수 |
+| `MAX_INPUT_CHARS_PER_DAY` | 하루 최대 입력 가능한 글자 수 |
+| `MAX_OUTPUT_TOKENS_PER_DAY` | 하루 최대 출력 가능한 토큰 (추정값) |
+| `BOT_IDLE_REPLY_PROB` | 멘션 없이도 랜덤 응답을 허용할 확률 (0~1 사이) |
 
 ### 4. 로컬 실행
 
@@ -158,8 +160,10 @@ export REPO_ZIP_URL="https://codeload.github.com/Amunage/telegrambot/zip/refs/he
 
 ## 문제 해결
 
-- 봇이 응답하지 않음 | `.env` 토큰/그룹 ID 확인, 봇이 그룹에 초대되었는지 및 관리자 권한이 필요한지 확인
-- 명령이 "사용할 수 있는 명령이 아니에요"로 응답 | `/umabot` 하위 명령어 철자를 확인, 관리자 ID인지 확인
-- 유머 링크가 반복됨 | 최근 전송 목록을 내부에서 캐시하므로 시간이 지나면 자동 회복. 긴 시간 반복 시 네트워크 로그 확인
-- DB 파일이 생성되지 않음 | 실행 계정의 디렉터리 쓰기 권한 확인, `utils.mainpath` 경로 점검
+| 증상 | 해결법 |
+| --- | --- |
+| 봇이 응답하지 않음 | `.env` 토큰/그룹 ID 확인, 봇이 그룹에 초대되었는지 및 관리자 권한이 필요한지 확인 |
+| 명령이 "사용할 수 있는 명령이 아니에요"로 응답 | `/umabot` 하위 명령어 철자를 확인, 관리자 ID인지 확인 |
+| 유머 링크가 반복됨 | 최근 전송 목록을 내부에서 캐시하므로 시간이 지나면 자동 회복. 긴 시간 반복 시 네트워크 로그 확인 |
+| DB 파일이 생성되지 않음 | 실행 계정의 디렉터리 쓰기 권한 확인, `utils.mainpath` 경로 점검 |
 
