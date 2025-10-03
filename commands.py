@@ -98,7 +98,7 @@ def bot_settings(parts, chat_id, user_id, user_name):
         if sub == "show":
             txt = get_guidelines(chat_id)
             if not txt.strip():
-                return "현재 커스텀 지침이 없습니다."
+                return "현재 커스텀 지침이 없어요."
             preview = (txt[:900] + "…") if len(txt) > 900 else txt
             return f"커스텀 지침\n<pre>{preview}</pre>"
 
@@ -107,11 +107,11 @@ def bot_settings(parts, chat_id, user_id, user_name):
                 return "[사용법] /umabot guide set [지침내용]"
             text = " ".join(parts[3:]).strip()
             set_guidelines(chat_id, text, updated_by=user_id)
-            return f"커스텀 지침을 저장했습니다. ({len(text)}자)"
+            return f"커스텀 지침을 저장했어요. ({len(text)}자)"
 
         if sub == "clear":
             clear_guidelines(chat_id)
-            return "커스텀 지침을 삭제했습니다."
+            return "커스텀 지침을 삭제했어요."
 
         return "[사용법] /umabot guide [show|set|clear]"
 
@@ -137,21 +137,21 @@ def bot_settings(parts, chat_id, user_id, user_name):
             try:
                 value = int(parts[4])
             except ValueError:
-                return "값은 정수여야 합니다."
+                return "값은 정수여야 해요."
             try:
                 set_limit(key, value)
             except ValueError as e:
                 return f"오류: {e}"
-            return f"{key} = {value} 로 설정했습니다. (프로세스 재시작 없이 즉시 반영)"
+            return f"{key} = {value} 로 설정했어요."
 
         if sub == "reset":
             scope = parts[3].lower() if len(parts) >= 4 else "limits"
             if scope == "limits":
                 reset_limits()
-                return "한도 오버라이드를 초기화했습니다. (환경변수 기본값으로 복귀)"
+                return "한도 오버라이드를 초기화했어요."
             if scope in ("today", "all"):
                 reset_usage(scope)
-                return f"사용량을 초기화했습니다. (scope={scope})"
+                return f"사용량을 초기화했어요. (scope={scope})"
             return "[사용법] /umabot quota reset [limits|today|all]"
 
         return "[사용법] /umabot quota [show|set|reset]"
@@ -162,7 +162,7 @@ def bot_settings(parts, chat_id, user_id, user_name):
         sub = parts[2].lower()
         if sub == "reset":
             reset_db()
-            return "DB 스키마를 초기화했습니다. (모든 데이터 삭제)"
+            return "DB 스키마를 초기화했어요. (모든 데이터 삭제)"
 
         if sub == "context":
             try:
@@ -203,7 +203,7 @@ async def handle_command(
             print(f"[info] {msg.chat.id} / {allowed_chat_ids}")
         else:
             print(f"[info] {msg.chat.id}")
-        await msg.answer("어~… 평범~한 우마무스메예요! 어디에나 있을 법한 그런 느낌의~")
+        await msg.answer("안녕하세요.")
         return
 
     if command == "umabot":
