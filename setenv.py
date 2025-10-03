@@ -24,6 +24,9 @@ DEFAULT_ENV_TEMPLATE = dedent(
     MAX_CALLS_PER_DAY=100
     MAX_INPUT_CHARS_PER_DAY=100000
     MAX_OUTPUT_TOKENS_PER_DAY=20000
+
+    # db 파일 경로
+    CHAT_DB_PATH=chat.db
     USAGE_DB_PATH=usage.db
 
     # 자발적 응답 확률 (0.0~1.0)
