@@ -24,6 +24,7 @@ HUMOR_IDLE_MESSAGE_TEMPLATE = "{title}\n{link}"
 HUMOR_IDLE_QUIET_START_HOUR = 0  # 0시
 HUMOR_IDLE_QUIET_END_HOUR = 8    # 8시 미만까지 조용히
 HUMOR_IDLE_TIMEZONE = timezone(timedelta(hours=9))  # 한국 표준시
+HUMOR_BLOCKED_CHAT_IDS = {889998272} # 자동글 차단 예: 개인 채팅방
 
 
 class IdleHumorPoster:
@@ -32,6 +33,8 @@ class IdleHumorPoster:
     def __init__(self, bot: Bot, chat_ids: Iterable[int]):
         self._bot = bot
         self._chat_ids = {cid for cid in chat_ids if cid}
+        if HUMOR_BLOCKED_CHAT_IDS:
+            self._chat_ids.difference_update(HUMOR_BLOCKED_CHAT_IDS)
         self._dogdrip_url = DOGDRIP_POPULAR_URL
         self._idle_seconds = max(0, int(HUMOR_IDLE_MINUTES * 60))
         self._check_interval = HUMOR_IDLE_CHECK_SECONDS
@@ -101,7 +104,7 @@ class IdleHumorPoster:
                 continue
 
             marker = self._last_post_marker.get(chat_id)
-            if marker is not None and marker >= ts:
+            if marker is not None and now - marker < self._idle_seconds:
                 continue
 
             article = await self._fetch_article()
@@ -118,12 +121,13 @@ class IdleHumorPoster:
                 continue
 
             sent_ts = int(time.time())
+            humor_text = "[유머글] " + message
             store.save_message(
                 chat_id,
                 None,
                 "Miracle",
                 "bot",
-                message,
+                humor_text,
                 sent_ts,
             )
 
@@ -216,6 +220,7 @@ class IdleHumorPoster:
         return choice
 
     def _format_message(self, title: str, link: str) -> str:
+        print(f"[idle] 준비된 유머글: {title} / {link}")
         try:
             return self._message_template.format(title=title, link=link)
         except Exception:

@@ -19,7 +19,7 @@ from chat_filters import ChatAllowed, parse_ids_from_env
 from store import init_db, save_message
 from setenv import ensure_env_file
 
-# 기본 설정
+### 기본 설정
 
 print("Loading environment variables...")
 ensure_env_file()
@@ -49,7 +49,7 @@ ALLOWED_CHAT_IDS: Set[int] = parse_ids_from_env("TELEGRAM_GROUP_IDS")
 # print("ALLOWED (raw):", os.getenv("TELEGRAM_GROUP_IDS"))
 # print("ALLOWED (parsed):", ALLOWED_CHAT_IDS)
 
-# 관리자 권한
+### 관리자 권한
 
 print("Setting up admin users...")
 def _parse_admin_ids(raw: str | None) -> set[int]:
@@ -80,7 +80,7 @@ def is_admin(user_id: int | None) -> bool:
 
 
 
-# 봇 인스턴스
+### 봇 인스턴스
 
 print("Starting bot")
 bot = Bot(
@@ -90,7 +90,7 @@ bot = Bot(
 dp = Dispatcher()
 
 
-# 채팅방 필터링
+### 채팅방 필터링
 
 router = Router()
 chat_filter = ChatAllowed(ALLOWED_CHAT_IDS, notify=True, notice="트레이너가 모르는 사람이랑 말하지 말래요...")
@@ -117,7 +117,7 @@ async def handle_commands(msg: types.Message):
 
 
 
-# 일반 메시지 처리
+### 일반 메시지 처리
 
 @router.message()
 async def on_message(msg: types.Message):
@@ -173,7 +173,7 @@ async def on_message(msg: types.Message):
     await msg.answer(response_text)
 
     # 봇 메시지 저장
-
+    
     save_message(
         msg.chat.id,
         None,
