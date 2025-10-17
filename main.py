@@ -81,13 +81,13 @@ def is_admin(user_id: int | None) -> bool:
 
 
 ### 봇 인스턴스
-
-print("Starting bot")
+print("Bot instance creation...")
 bot = Bot(
     token=TELEGRAM_BOT_TOKEN,
     default=DefaultBotProperties(parse_mode=ParseMode.HTML)
 )
 dp = Dispatcher()
+print("Starting bot!")
 
 
 ### 채팅방 필터링
