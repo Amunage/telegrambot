@@ -4,7 +4,7 @@ from google import genai
 from google.genai import types, errors
 
 from context_builder import build_context_for_llm
-from persona import umamusume
+from persona import bot_instruction
 from quota import _check_quota_or_msg, add_usage, _estimate_output_tokens_from_config
 
 # LLM 설정
@@ -12,11 +12,11 @@ MODEL_NAME = "gemini-2.5-flash"
 
 _config_kwargs = dict(
     temperature=0.9,
-    max_output_tokens=200,
+    max_output_tokens=300,
     top_p=0.95,
     top_k=40,
-    stop_sequences=["트레이너 씨:", "User:"],
-    system_instruction=umamusume,
+    stop_sequences=["User:"],
+    system_instruction=bot_instruction,
     thinking_config=types.ThinkingConfig(thinking_budget=0),
 )
 
@@ -59,13 +59,13 @@ def generate_genai(chat_id: int, user_name: str, user_msg: str) -> str:
         )
     except errors.ServerError as exc:
         print(f"[llm] ServerError: {exc}")
-        return "잠시 과자 좀 먹고요... 조금 뒤에 다시 부탁해 주실래요?"
+        return "조금 뒤에 다시 부탁해 주세요."
     except errors.GoogleAPIError as exc:  # includes ClientError, PermissionDenied 등
         print(f"[llm] GoogleAPIError: {exc}")
-        return "어라... 뭔가 멍하네요. 잠시만요..?"
+        return "조금 뒤에 다시 부탁해 주세요."
     except Exception as exc:  # defensive catch-all so bot stays alive
         print(f"[llm] Unexpected error: {exc}")
-        return "엣, 죄송해요... 방금 뭐라고 하셨죠?"
+        return "조금 뒤에 다시 부탁해 주세요."
 
     # [기록] 호출 후 사용량 누적
     add_usage(chat_id, input_chars=len(prompt), output_tokens=_estimate_output_tokens_from_config(CONFIG))
@@ -88,4 +88,4 @@ def generate_genai(chat_id: int, user_name: str, user_msg: str) -> str:
         if text:
             return text
 
-    return "에... 머릿속 통신 상태가 영 좋지 않은 모양인데요." 
+    return "통신 상태가 불안정해요. 조금 뒤에 다시 부탁해 주세요." 

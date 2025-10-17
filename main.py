@@ -18,6 +18,7 @@ import post_idle
 from chat_filters import ChatAllowed, parse_ids_from_env
 from store import init_db, save_message
 from setenv import ensure_env_file
+from persona import bot_name, bot_sign
 
 ### 기본 설정
 
@@ -30,7 +31,8 @@ TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 if not TELEGRAM_BOT_TOKEN:
     raise RuntimeError("환경변수 TELEGRAM_BOT_TOKEN이 설정되어 있지 않습니다. .env 파일을 확인하세요.")
 
-CALL_KEYWORDS = ("히시 미라클", "히시미라클", "미라코")
+BOT_NAME = bot_name
+CALL_KEYWORDS = bot_sign
 
 def _parse_idle_reply_probability(env_name: str = "BOT_IDLE_REPLY_PROB") -> float:
     raw = os.getenv(env_name)
@@ -46,8 +48,6 @@ def _parse_idle_reply_probability(env_name: str = "BOT_IDLE_REPLY_PROB") -> floa
 IDLE_REPLY_PROBABILITY = _parse_idle_reply_probability()
 
 ALLOWED_CHAT_IDS: Set[int] = parse_ids_from_env("TELEGRAM_GROUP_IDS")
-# print("ALLOWED (raw):", os.getenv("TELEGRAM_GROUP_IDS"))
-# print("ALLOWED (parsed):", ALLOWED_CHAT_IDS)
 
 ### 관리자 권한
 
@@ -93,7 +93,7 @@ dp = Dispatcher()
 ### 채팅방 필터링
 
 router = Router()
-chat_filter = ChatAllowed(ALLOWED_CHAT_IDS, notify=True, notice="트레이너가 모르는 사람이랑 말하지 말래요...")
+chat_filter = ChatAllowed(ALLOWED_CHAT_IDS, notify=True, notice="허용되지 않은 채팅방이에요.")
 router.message.filter(chat_filter)
 router.callback_query.filter(chat_filter)
 router.chat_member.filter(chat_filter)
@@ -103,7 +103,7 @@ dp.include_router(router)
 
 # 봇 명령어
 
-command_list = ["umastart", "umabot", "umahumor"]
+command_list = ["botstart", "botset", "botpost"]
 
 @router.message(Command(commands=command_list))
 async def handle_commands(msg: types.Message):
@@ -169,7 +169,7 @@ async def on_message(msg: types.Message):
         user_msg=question
     )
     if not response_text:
-        response_text = "미라클이 잠시 생각에 잠겼어요... 조금 있다가 다시 시도해 주세요."
+        response_text = "조금 있다가 다시 시도해 주세요."
     await msg.answer(response_text)
 
     # 봇 메시지 저장
@@ -177,7 +177,7 @@ async def on_message(msg: types.Message):
     save_message(
         msg.chat.id,
         None,
-        'Miracle',
+        BOT_NAME,
         'bot',
         response_text,
         int(time.time())

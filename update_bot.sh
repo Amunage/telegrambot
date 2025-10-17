@@ -15,6 +15,7 @@ PRESERVE_LIST=(
   "chat.db-wal"
   "chat.db-shm"
   "settings.json"
+  "persona.py"
 )
 
 # === 준비 ===

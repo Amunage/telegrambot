@@ -16,8 +16,8 @@ def filter_and_compact(rows: List[Tuple[int, str, str, int]]) -> List[str]:
     - 시간 정제: 너무 오래된 메시지는 제외
     """
 
-    MAX_LENGTH = 70  # 최종 문자열 허용 길이
-    CUT_LENGTH = 30  # 길이 초과 시 앞/뒤로 남길 문자 수
+    MAX_LENGTH = 110  # 최종 문자열 허용 길이
+    CUT_LENGTH = 50  # 길이 초과 시 앞/뒤로 남길 문자 수
     MAX_AGE_SECONDS = 3 * 3600  # 시간 창(window) 밖 메시지 제거 (3시간)
     BANNED_STRINGS = {"…", "...", "으음", "글쎄요", "딱히"}  # 반복/헛기침 등 제거 대상 문자열
     now = time.time()
@@ -52,7 +52,7 @@ def filter_and_compact(rows: List[Tuple[int, str, str, int]]) -> List[str]:
 
         # URL은 컨텍스트에서 `url_link`로 치환하여 의미만 남김
         if re.search(r"https?://", condensed, flags=re.IGNORECASE):
-            condensed = re.sub(r"https?://\S+", "url_link", condensed, flags=re.IGNORECASE)
+            condensed = re.sub(r"https?://\S+", "<url_link>", condensed, flags=re.IGNORECASE)
 
         # 반복 문자는 2회까지만 남김 (ㅋㅋㅋㅋ → ㅋㅋ)
         condensed = re.sub(r"(.)\1{3,}", r"\1\1", condensed)

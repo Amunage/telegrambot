@@ -14,37 +14,39 @@ from aiogram import Bot
 from bs4 import BeautifulSoup
 
 import store
+from persona import bot_name
+BOT_NAME = bot_name
+
+POST_NAME = "dogdrip"
+POST_URL = "https://www.dogdrip.net/?mid=dogdrip&sort_index=popular"
+POST_IDLE_MINUTES = 180  # 3 hours
+POST_IDLE_CHECK_SECONDS = 600  # 최소 10분
+POST_IDLE_HTTP_TIMEOUT = 10.0
+POST_IDLE_MESSAGE_TEMPLATE = "{title}\n{link}"
+POST_IDLE_QUIET_START_HOUR = 0  # 0시
+POST_IDLE_QUIET_END_HOUR = 8    # 8시 미만까지 조용히
+POST_IDLE_TIMEZONE = timezone(timedelta(hours=9))  # 한국 표준시
+POST_BLOCKED_CHAT_IDS = {889998272} # 자동글 차단 예: 개인 채팅방
 
 
-DOGDRIP_POPULAR_URL = "https://www.dogdrip.net/?mid=dogdrip&sort_index=popular"
-HUMOR_IDLE_MINUTES = 180  # 3 hours
-HUMOR_IDLE_CHECK_SECONDS = 600  # 최소 10분
-HUMOR_IDLE_HTTP_TIMEOUT = 10.0
-HUMOR_IDLE_MESSAGE_TEMPLATE = "{title}\n{link}"
-HUMOR_IDLE_QUIET_START_HOUR = 0  # 0시
-HUMOR_IDLE_QUIET_END_HOUR = 8    # 8시 미만까지 조용히
-HUMOR_IDLE_TIMEZONE = timezone(timedelta(hours=9))  # 한국 표준시
-HUMOR_BLOCKED_CHAT_IDS = {889998272} # 자동글 차단 예: 개인 채팅방
-
-
-class IdleHumorPoster:
-    """채팅방이 일정 시간 이상 조용하면 도그드립 인기글 링크를 전송하는 백그라운드 태스크."""
+class IdlePOSTPoster:
+    """채팅방이 일정 시간 이상 조용하면 포스트 링크를 전송하는 백그라운드 태스크."""
 
     def __init__(self, bot: Bot, chat_ids: Iterable[int]):
         self._bot = bot
         self._chat_ids = {cid for cid in chat_ids if cid}
-        if HUMOR_BLOCKED_CHAT_IDS:
-            self._chat_ids.difference_update(HUMOR_BLOCKED_CHAT_IDS)
-        self._dogdrip_url = DOGDRIP_POPULAR_URL
-        self._idle_seconds = max(0, int(HUMOR_IDLE_MINUTES * 60))
-        self._check_interval = HUMOR_IDLE_CHECK_SECONDS
-        self._request_timeout = HUMOR_IDLE_HTTP_TIMEOUT
-        self._message_template = HUMOR_IDLE_MESSAGE_TEMPLATE
+        if POST_BLOCKED_CHAT_IDS:
+            self._chat_ids.difference_update(POST_BLOCKED_CHAT_IDS)
+        self._post_url = POST_URL
+        self._idle_seconds = max(0, int(POST_IDLE_MINUTES * 60))
+        self._check_interval = POST_IDLE_CHECK_SECONDS
+        self._request_timeout = POST_IDLE_HTTP_TIMEOUT
+        self._message_template = POST_IDLE_MESSAGE_TEMPLATE
         self._quiet_hours: Optional[Tuple[int, int]] = (
-            HUMOR_IDLE_QUIET_START_HOUR,
-            HUMOR_IDLE_QUIET_END_HOUR,
+            POST_IDLE_QUIET_START_HOUR,
+            POST_IDLE_QUIET_END_HOUR,
         )
-        self._timezone = HUMOR_IDLE_TIMEZONE
+        self._timezone = POST_IDLE_TIMEZONE
 
         self._last_post_marker: Dict[int, int] = {}
         self._recent_links: list[str] = []
@@ -53,13 +55,13 @@ class IdleHumorPoster:
     @property
     def enabled(self) -> bool:
         if not self._chat_ids:
-            print("[idle] 대상 채팅방이 없어 유머 링크 자동 게시가 비활성화됩니다.")
+            print("[idle] 대상 채팅방이 없어 포스트 링크 자동 게시가 비활성화됩니다.")
             return False
         if self._idle_seconds <= 0:
-            print("[idle] HUMOR_IDLE_MINUTES가 0 이하로 설정되어 기능이 비활성화됩니다.")
+            print("[idle] POST_IDLE_MINUTES가 0 이하로 설정되어 기능이 비활성화됩니다.")
             return False
-        if not self._dogdrip_url:
-            print("[idle] 사용할 도그드립 주소가 설정되지 않아 기능이 비활성화됩니다.")
+        if not self._post_url:
+            print("[idle] 사용할 포스트 주소가 설정되지 않아 기능이 비활성화됩니다.")
             return False
         return True
 
@@ -68,7 +70,7 @@ class IdleHumorPoster:
             return None
         if self._task and not self._task.done():
             return self._task
-        self._task = asyncio.create_task(self._run_loop(), name="idle-humor-poster")
+        self._task = asyncio.create_task(self._run_loop(), name="idle-post-poster")
         return self._task
 
     async def stop(self) -> None:
@@ -121,13 +123,13 @@ class IdleHumorPoster:
                 continue
 
             sent_ts = int(time.time())
-            humor_text = "[유머글] " + message
+            POST_text = "[읽을거리] " + message
             store.save_message(
                 chat_id,
                 None,
-                "Miracle",
+                BOT_NAME,
                 "bot",
-                humor_text,
+                POST_text,
                 sent_ts,
             )
 
@@ -145,7 +147,7 @@ class IdleHumorPoster:
         if start == end:
             return False
 
-        tz = self._timezone or HUMOR_IDLE_TIMEZONE
+        tz = self._timezone or POST_IDLE_TIMEZONE
         target_epoch = epoch or time.time()
         hour = datetime.fromtimestamp(target_epoch, tz).hour
 
@@ -157,39 +159,39 @@ class IdleHumorPoster:
         timeout = aiohttp.ClientTimeout(total=self._request_timeout)
         try:
             async with aiohttp.ClientSession(timeout=timeout) as session:
-                text = await self._http_text(session, self._dogdrip_url)
+                text = await self._http_text(session, self._post_url)
         except Exception as exc:
-            print(f"[idle] 도그드립 페이지 요청 중 오류: {exc!r}")
+            print(f"[idle] 포스트 페이지 요청 중 오류: {exc!r}")
             return None
 
         if not text:
             return None
 
         try:
-            candidates = self._parse_dogdrip_popular(text, base=self._dogdrip_url)
+            candidates = self._parse_post(text, base=self._post_url)
             if not candidates:
                 return None
             return self._pick_candidate(candidates)
         except Exception as exc:
-            print(f"[idle] 도그드립 파싱 오류: {exc!r}")
+            print(f"[idle] 포스트 파싱 오류: {exc!r}")
             return None
 
     async def _http_text(self, session: aiohttp.ClientSession, url: str) -> Optional[str]:
-        headers = {"User-Agent": "idle-humor/1.0"}
+        headers = {"User-Agent": "idle-post/1.0"}
         async with session.get(url, headers=headers) as resp:
             if resp.status != 200:
                 print(f"[idle] 요청 실패(status={resp.status}, url={url})")
                 return None
             return await resp.text()
 
-    def _parse_dogdrip_popular(self, html_text: str, base: str) -> list[Tuple[str, str]]:
+    def _parse_post(self, html_text: str, base: str) -> list[Tuple[str, str]]:
         soup = BeautifulSoup(html_text, "html.parser")
         candidates: list[Tuple[str, str]] = []
         seen: set[str] = set()
 
         for anchor in soup.find_all("a", href=True):
             href = anchor["href"]
-            match = re.match(r"^/dogdrip/(\d+)$", href.split("?")[0])
+            match = re.match(rf"^/{POST_NAME}/(\d+)$", href.split("?")[0])
             if not match:
                 continue
 
@@ -220,23 +222,24 @@ class IdleHumorPoster:
         return choice
 
     def _format_message(self, title: str, link: str) -> str:
-        print(f"[idle] 준비된 유머글: {title} / {link}")
+        print(f"[idle] 준비된 포스트: {title} / {link}")
+        message_title = "[포스트] "+ title
         try:
-            return self._message_template.format(title=title, link=link)
+            return self._message_template.format(title=message_title, link=link)
         except Exception:
             return f"쉬는 동안 읽을거리 하나 드릴게요!\n{title}\n{link}"
 
 
-def start_idle_task(bot: Bot, chat_ids: Iterable[int]) -> Optional[IdleHumorPoster]:
-    poster = IdleHumorPoster(bot, chat_ids)
+def start_idle_task(bot: Bot, chat_ids: Iterable[int]) -> Optional[IdlePOSTPoster]:
+    poster = IdlePOSTPoster(bot, chat_ids)
     task = poster.start()
     if not task:
         return None
     return poster
 
 
-async def fetch_humor_message(bot: Bot) -> Optional[str]:
-    poster = IdleHumorPoster(bot, [])
+async def fetch_post_message(bot: Bot) -> Optional[str]:
+    poster = IdlePOSTPoster(bot, [])
     article = await poster._fetch_article()
     if not article:
         return None

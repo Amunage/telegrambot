@@ -14,12 +14,16 @@ documents/
 deploy/
 .scripts/
 scripts/
+.data/
+data/
 
 # secrets / local config
 .env
 *.env
 *.key
 *.pem
+.gitignore
+*.gitignore
 
 # DB / logs
 *.db

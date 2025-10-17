@@ -78,8 +78,6 @@ def init_db() -> None:
             """
             CREATE TABLE IF NOT EXISTS settings(
                 chat_id        INTEGER PRIMARY KEY,
-                persona        TEXT DEFAULT 'seiunsky',
-                style          TEXT DEFAULT 'jondae',
                 window_minutes INTEGER DEFAULT 60,
                 memory_limit   INTEGER DEFAULT 10,
                 keep_per_chat  INTEGER DEFAULT 100,
@@ -89,8 +87,6 @@ def init_db() -> None:
         )
 
         for col, decl in [
-            ("persona", "TEXT DEFAULT 'seiunsky'"),
-            ("style", "TEXT DEFAULT 'jondae'"),
             ("window_minutes", "INTEGER DEFAULT 60"),
             ("memory_limit", "INTEGER DEFAULT 10"),
             ("keep_per_chat", "INTEGER DEFAULT 100"),
@@ -272,8 +268,6 @@ def set_memory_config(
     memory_limit: Optional[int] = None,
     keep_per_chat: Optional[int] = None,
     retain_days: Optional[int] = None,
-    persona: Optional[str] = None,
-    style: Optional[str] = None,
 ) -> None:
     _ensure_settings_row(chat_id)
     fields: List[str] = []
@@ -283,8 +277,6 @@ def set_memory_config(
         ("memory_limit", memory_limit),
         ("keep_per_chat", keep_per_chat),
         ("retain_days", retain_days),
-        ("persona", persona),
-        ("style", style),
     ]:
         if val is not None:
             fields.append(f"{key}=?")

@@ -23,6 +23,8 @@ from store import (
     set_guidelines,
     set_memory_config,
 )
+from persona import bot_name
+BOT_NAME = bot_name
 
 
 HELP_TEXT = (
@@ -56,7 +58,7 @@ def bot_settings(parts, chat_id, user_id, user_name):
         win, lim, keep, days = get_memory_config(chat_id)
 
         if len(parts) < 3:
-            return "[사용법] /umabot memory [show|set|retain]"
+            return "[사용법] /botset memory [show|set|retain]"
 
         sub = parts[2].lower()
 
@@ -65,33 +67,33 @@ def bot_settings(parts, chat_id, user_id, user_name):
 
         if sub == "set":
             if len(parts) < 5:
-                return "[사용법] /umabot memory set [분] [개수]  예) /umabot memory set 60 100"
+                return "[사용법] /botset memory set [분] [개수]  예) /botset memory set 60 100"
             try:
                 win = max(1, int(parts[3]))
                 lim = max(1, int(parts[4]))
             except ValueError:
-                return "[사용법] /umabot memory set [분] [개수]  예) /umabot memory set 60 100"
+                return "[사용법] /botset memory set [분] [개수]  예) /botset memory set 60 100"
             set_memory_config(chat_id, window_minutes=win, memory_limit=lim)
             return f"[컨텍스트 설정 완료] 최근 {win}분, 최대 {lim}개"
 
         if sub == "retain":
             if len(parts) < 5:
-                return "[사용법] /umabot memory retain [개수] [일수]  예) /umabot memory retain 3000 3"
+                return "[사용법] /botset memory retain [개수] [일수]  예) /botset memory retain 3000 3"
             try:
                 n = max(100, int(parts[3]))
                 m = max(1, int(parts[4]))
             except ValueError:
-                return "[사용법] /umabot memory retain [개수] [일수]  예) /umabot memory retain 3000 3"
+                return "[사용법] /botset memory retain [개수] [일수]  예) /botset memory retain 3000 3"
             set_memory_config(chat_id, keep_per_chat=n, retain_days=m)
             deleted1 = cleanup_keep_recent_per_chat(keep=n)
             deleted2 = cleanup_old_messages(days=m)
             return f"[보존 설정 완료] 채팅방별 최근 {n}개, {m}일 보관 (대략 {deleted1} + {deleted2}개 정리)"
 
-        return "[사용법] /umabot memory [show|set|retain]"
+        return "[사용법] /botset memory [show|set|retain]"
 
     if command == "guide":
         if len(parts) < 3:
-            return "[사용법] /umabot guide [show|set|clear]"
+            return "[사용법] /botset guide [show|set|clear]"
 
         sub = parts[2].lower()
 
@@ -104,7 +106,7 @@ def bot_settings(parts, chat_id, user_id, user_name):
 
         if sub == "set":
             if len(parts) < 4:
-                return "[사용법] /umabot guide set [지침내용]"
+                return "[사용법] /botset guide set [지침내용]"
             text = " ".join(parts[3:]).strip()
             set_guidelines(chat_id, text, updated_by=user_id)
             return f"커스텀 지침을 저장했어요. ({len(text)}자)"
@@ -113,11 +115,11 @@ def bot_settings(parts, chat_id, user_id, user_name):
             clear_guidelines(chat_id)
             return "커스텀 지침을 삭제했어요."
 
-        return "[사용법] /umabot guide [show|set|clear]"
+        return "[사용법] /botset guide [show|set|clear]"
 
     if command == "quota":
         if len(parts) < 3:
-            return "[사용법] /umabot quota [show|set|reset]"
+            return "[사용법] /botset quota [show|set|reset]"
         sub = parts[2].lower()
 
         if sub == "show":
@@ -132,7 +134,7 @@ def bot_settings(parts, chat_id, user_id, user_name):
                     "MAX_CALLS_PER_DAY | MAX_INPUT_CHARS_PER_DAY | "
                     "MAX_OUTPUT_TOKENS_PER_DAY | MAX_CALLS_PER_CHAT_PER_DAY"
                 )
-                return f"[사용법] /umabot quota set <KEY> <값>\n가능키: {keys}"
+                return f"[사용법] /botset quota set <KEY> <값>\n가능키: {keys}"
             key = parts[3].upper()
             try:
                 value = int(parts[4])
@@ -152,13 +154,13 @@ def bot_settings(parts, chat_id, user_id, user_name):
             if scope in ("today", "all"):
                 reset_usage(scope)
                 return f"사용량을 초기화했어요. (scope={scope})"
-            return "[사용법] /umabot quota reset [limits|today|all]"
+            return "[사용법] /botset quota reset [limits|today|all]"
 
-        return "[사용법] /umabot quota [show|set|reset]"
+        return "[사용법] /botset quota [show|set|reset]"
 
     if command == "data":
         if len(parts) < 3:
-            return "[사용법] /umabot data [context|reset]"
+            return "[사용법] /botset data [context|reset]"
         sub = parts[2].lower()
         if sub == "reset":
             reset_db()
@@ -181,9 +183,9 @@ def bot_settings(parts, chat_id, user_id, user_name):
 
             return f"<pre>{final_ctx}</pre>"
 
-        return "[사용법] /umabot data [context|reset]"
+        return "[사용법] /botset data [context|reset]"
 
-    return "모르겠어요. /umabot help 로 도움말을 확인하세요."
+    return "모르겠어요. /botset help 로 도움말을 확인하세요."
 
 
 async def handle_command(
@@ -198,7 +200,7 @@ async def handle_command(
 
     command = (msg.text or "").split(maxsplit=1)[0].lower().lstrip("/")
 
-    if command == "umastart":
+    if command == "botstart":
         if allowed_chat_ids is not None:
             print(f"[info] {msg.chat.id} / {allowed_chat_ids}")
         else:
@@ -206,7 +208,7 @@ async def handle_command(
         await msg.answer("안녕하세요.")
         return
 
-    if command == "umabot":
+    if command == "botset":
         print(f'{msg.from_user.id}: {msg.text}')
         parts = (msg.text or "").split()
         chat_id = msg.chat.id
@@ -218,20 +220,20 @@ async def handle_command(
             await msg.answer(text)
         return
 
-    if command == "umahumor":
-        humor_text = await post_idle.fetch_humor_message(bot)
-        if not humor_text:
-            await msg.answer("지금은 유머글을 가져오지 못했어요. 잠시 후 다시 시도해 주세요!")
+    if command == "botpost":
+        post_text = await post_idle.fetch_post_message(bot)
+        if not post_text:
+            await msg.answer("지금은 포스트를 가져오지 못했어요. 잠시 후 다시 시도해 주세요!")
             return
 
-        await msg.answer(humor_text)
+        await msg.answer(post_text)
 
         save_message(
             msg.chat.id,
             None,
-            'Miracle',
+            BOT_NAME,
             'bot',
-            humor_text,
+            post_text,
             int(time.time())
         )
         return
