@@ -1,16 +1,25 @@
+from datetime import datetime, timedelta, timezone
 from typing import List, Tuple
 import os
 import re
 import time
 
+
 mainpath = os.path.dirname(os.path.abspath(__file__))
 
+_KST = timezone(timedelta(hours=9))
+_KOREAN_WEEKDAYS = ("월요일", "화요일", "수요일", "목요일", "금요일", "토요일", "일요일")
+
+def korea_time()->str:
+    now = datetime.now(_KST)    
+    weekday = _KOREAN_WEEKDAYS[now.weekday()]
+    return f"{now.hour:02d}시{now.minute:02d}분 {weekday}"
 
 def filter_and_compact(rows: List[Tuple[int, str, str, int]]) -> List[str]:
     """압축된 대화 로그를 생성한다.
 
     적용 정책
-    - 길이/줄 수 제한: 최대 2줄, 50자 안팎으로 축약
+    - 길이/줄 수 제한: 최대 2줄, 100자 안팎으로 축약
     - 중복 제거: 같은 사용자가 직전에 올린 같은 내용은 무시
     - 노이즈 필터링: 링크, 이모지/특수문자만 있는 메시지 제거
     - 시간 정제: 너무 오래된 메시지는 제외
@@ -52,7 +61,7 @@ def filter_and_compact(rows: List[Tuple[int, str, str, int]]) -> List[str]:
 
         # URL은 컨텍스트에서 `url_link`로 치환하여 의미만 남김
         if re.search(r"https?://", condensed, flags=re.IGNORECASE):
-            condensed = re.sub(r"https?://\S+", "<url_link>", condensed, flags=re.IGNORECASE)
+            condensed = re.sub(r"https?://\S+", "url_link", condensed, flags=re.IGNORECASE)
 
         # 반복 문자는 2회까지만 남김 (ㅋㅋㅋㅋ → ㅋㅋ)
         condensed = re.sub(r"(.)\1{3,}", r"\1\1", condensed)

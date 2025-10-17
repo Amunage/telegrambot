@@ -159,16 +159,21 @@ async def on_message(msg: types.Message):
             print(f"[bot] idle trigger fired (p={IDLE_REPLY_PROBABILITY}, roll={roll:.3f})")
     if not triggered:
         return
+    
 
 
     # LLM 호출 및 응답
-
+    start_ts = time.time()
     response_text = llm.generate_genai(
         chat_id=msg.chat.id,
         user_name=msg.from_user.username,
         user_msg=question
     )
-    if not response_text:
+
+    elapsed = time.time() - start_ts
+    if elapsed >= 30:
+        response_text = "응답시간이 초과되었어요."
+    elif not response_text:
         response_text = "조금 있다가 다시 시도해 주세요."
     await msg.answer(response_text)
 
