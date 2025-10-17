@@ -14,7 +14,6 @@ DEFAULT_ENV_TEMPLATE = dedent(
     # 컨텍스트/페르소나 기본값
     CONTEXT_MAX_MINUTES=60
     CONTEXT_MAX_MESSAGES=100
-    DEFAULT_PERSONA_NAME=seiun_sky
 
     # 관리자 및 허용 채팅방 ID (쉼표로 구분)
     TELEGRAM_ADMIN_IDS=
