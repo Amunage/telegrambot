@@ -10,10 +10,6 @@ venv/
 # documents
 .documents/
 documents/
-.deploy/
-deploy/
-.scripts/
-scripts/
 .data/
 data/
 
